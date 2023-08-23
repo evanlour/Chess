@@ -5,6 +5,7 @@ public class Client {
     private Socket clientSocket;
     private PrintWriter out;
     private BufferedReader in;
+    public String clientName;
 
     public void start(String ip, int port) throws Exception{
         clientSocket = new Socket("localhost", 6666);
@@ -22,5 +23,9 @@ public class Client {
         in.close();
         out.close();
         clientSocket.close();
+    }
+
+    public void setName(String name){
+        this.clientName = name;
     }
 }

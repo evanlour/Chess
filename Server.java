@@ -1,54 +1,57 @@
 import java.net.*;
+import java.util.ArrayList;
 import java.io.*;
 
 public class Server extends IOException{
     private ServerSocket serverSocket;
-    private Socket clientSocket;
-    private PrintWriter out;
-    private BufferedReader in;
-    private InetAddress ip;
-    public String address;
+    private static ArrayList<Socket> clientSockets = new ArrayList<Socket>();
 
-    public void getIP(){
+    public void start(int port){
         try{
-            ip = InetAddress.getLocalHost();
-            address = ip.getHostAddress();
-            System.out.println(address);
-        }catch(UnknownHostException e){
+            serverSocket = new ServerSocket(port);
+            while(true){
+                new EchoClientHandler(serverSocket.accept()).start();
+            }
+        }catch(IOException e){
             e.printStackTrace();
         }
     }
 
-    public void start(int port){
+    public static class EchoClientHandler extends Thread{
+        private Socket clientSocket;
+        private PrintWriter out;
+        private BufferedReader in;
 
-        try{
-            serverSocket = new ServerSocket(port);
-            clientSocket = serverSocket.accept();
-            System.out.println("Does this work?");
-            out = new PrintWriter(clientSocket.getOutputStream(), true);
-            in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
-            String user = in.readLine();
-            out.println("Hello " + user);
-        }catch(IOException e){
-            e.printStackTrace();
+        public EchoClientHandler(Socket socket){
+            this.clientSocket = socket;
+            clientSockets.add(socket);
+        }
+
+        public void run(){
+            try{
+                out = new PrintWriter(clientSocket.getOutputStream(), true);
+                in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
+                String inputLine;
+                while((inputLine = in.readLine()) != null){
+                    if("EXIT".equals(inputLine)){
+                        out.println("Disconnection");
+                        break;
+                    }
+                    out.println(inputLine);
+                }
+                
+                in.close();
+                out.close();
+                clientSocket.close();
+            }catch(IOException e){
+                e.printStackTrace();
+            }
         }
     }
     
-    public void stop(){
-        try{
-            in.close();
-            out.close();
-            clientSocket.close();
-            serverSocket.close();
-        }catch(IOException e){
-            e.printStackTrace();
-        }
-
-    }
-
     public static void main(String[] args) throws Exception{
         Server server = new Server();
         server.start(6666);
-        server.getIP();
     }
+
 }
